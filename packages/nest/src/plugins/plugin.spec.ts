@@ -6,6 +6,21 @@ import { TS_SOLUTION_SETUP_TSCONFIG_INPUT } from '@nx/js/internal';
 import { TempFs } from '@nx/devkit/internal-testing-utils';
 import { createNodes } from './plugin';
 
+vi.mock('node:child_process', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:child_process')>()),
+  exec: vi.fn(),
+  execSync: vi.fn(),
+  spawn: vi.fn(),
+  spawnSync: vi.fn(),
+}));
+
+vi.mock('@nx/devkit', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@nx/devkit')>()),
+  generateFiles: vi.fn(),
+  formatFiles: vi.fn(),
+  runTasksInSerial: vi.fn(),
+}));
+
 const defaultNestCliConfig = {
   $schema: 'https://json.schemastore.org/nest-cli',
   collection: '@nestjs/schematics',
@@ -32,27 +47,19 @@ describe('@nx/nest/plugin', () => {
       },
     };
 
-    jest
-      .spyOn(childProcess, 'exec')
-      .mockImplementation((() => undefined) as any);
-    jest.spyOn(childProcess, 'execSync').mockImplementation((() => {
+    vi.mocked(childProcess.execSync).mockImplementation((() => {
       throw new Error('execSync should not be called by @nx/nest/plugin');
     }) as any);
-    jest.spyOn(childProcess, 'spawn').mockImplementation((() => {
+    vi.mocked(childProcess.spawn).mockImplementation((() => {
       throw new Error('spawn should not be called by @nx/nest/plugin');
     }) as any);
-    jest.spyOn(childProcess, 'spawnSync').mockImplementation((() => {
+    vi.mocked(childProcess.spawnSync).mockImplementation((() => {
       throw new Error('spawnSync should not be called by @nx/nest/plugin');
     }) as any);
-    jest.spyOn(devkitModule, 'generateFiles').mockImplementation(() => {});
-    jest.spyOn(devkitModule, 'formatFiles').mockResolvedValue(undefined);
-    jest
-      .spyOn(devkitModule, 'runTasksInSerial')
-      .mockImplementation((() => () => Promise.resolve()) as any);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.clearAllMocks();
     tempFs.cleanup();
     process.chdir(cwd);
   });

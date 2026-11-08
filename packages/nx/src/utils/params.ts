@@ -1,5 +1,4 @@
 import { logger } from './logger';
-import { handleImport } from './handle-import';
 import {
   selectPrompt,
   multiselectPrompt,
@@ -683,7 +682,7 @@ export function combineOptionsForExecutor(
     schema,
     false
   );
-  let combined = target.options || {};
+  let combined = { ...target.options };
   if (config && target.configurations && target.configurations[config]) {
     Object.assign(combined, target.configurations[config]);
   }
